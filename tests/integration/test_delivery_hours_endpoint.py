@@ -2,9 +2,11 @@ import pytest
 from httpx import AsyncClient, Response
 from respx import MockRouter
 
-from delivery_hours_service.main import COURIER_SERVICE_URL, VENUE_SERVICE_URL, app
+from delivery_hours_service.common.config import load_config
+from delivery_hours_service.main import app
 
 SECONDS_IN_HOUR = 60 * 60
+config = load_config()
 
 
 # TODO: Get rid of pytest.mark.xfail after implementing GET /delivery-hours
@@ -23,9 +25,8 @@ async def test_simple_venue_delivery_hours(respx_mock: MockRouter) -> None:
             ]
         },
     )
-    respx_mock.get(f"{VENUE_SERVICE_URL}/venues/{venue_id}/opening-hours").mock(
-        return_value=venue_service_response
-    )
+    venue_url = f"{config.venue_service_url}/venues/{venue_id}/opening-hours"
+    respx_mock.get(venue_url).mock(return_value=venue_service_response)
     courier_service_response = Response(
         status_code=200,
         json={
@@ -39,9 +40,9 @@ async def test_simple_venue_delivery_hours(respx_mock: MockRouter) -> None:
             ],
         },
     )
-    respx_mock.get(f"{COURIER_SERVICE_URL}/delivery-hours?city={city_slug}").mock(
-        return_value=courier_service_response
-    )
+    respx_mock.get(
+        f"{config.courier_service_url}/delivery-hours?city={city_slug}"
+    ).mock(return_value=courier_service_response)
 
     # Call our endpoint
     async with AsyncClient(app=app, base_url="http://test") as client:
@@ -52,7 +53,8 @@ async def test_simple_venue_delivery_hours(respx_mock: MockRouter) -> None:
     assert response.status_code == 200
     assert response.json() == {
         "delivery_hours": {
-            "Monday": "14-20",  # venue service 13-20, courier service 14-21 -> 14-20
+            # venue service 13-20, courier service 14-21 -> 14-20
+            "Monday": "14-20",
             "Tuesday": "Closed",
             "Wednesday": "Closed",
             "Thursday": "Closed",
