@@ -1,0 +1,109 @@
+{
+  "mappings": [
+    {
+      "priority": 1,
+      "request": {
+        "urlPathTemplate": "/venue-service/venues/{venueId}/opening-hours",
+        "method": "GET",
+        "pathParameters": {
+          "venueId": {
+            "equalTo": "123"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "fixedDelayMilliseconds": 300,
+        "jsonBody": {
+          "monday": [
+            {
+              "open": 46800
+            },
+            {
+              "close": 72000
+            }
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "priority": 1,
+      "request": {
+        "urlPathTemplate": "/courier-service/delivery-hours",
+        "method": "GET",
+        "queryParameters": {
+          "city": {
+            "equalTo": "helsinki"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "fixedDelayMilliseconds": 300,
+        "jsonBody": {
+          "monday": [
+            {
+              "open": 50400
+            },
+            {
+              "close": 75600
+            }
+          ],
+          "tuesday": [
+            {
+              "open": 36000
+            },
+            {
+              "close": 82800
+            }
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "priority": 2,
+      "request": {
+        "urlPathTemplate": "/venue-service/venues/{venueId}/opening-hours",
+        "method": "GET"
+      },
+      "response": {
+        "status": 404,
+        "fixedDelayMilliseconds": 300,
+        "jsonBody": {
+          "error": "Unknown venue id"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "priority": 2,
+      "request": {
+        "urlPathTemplate": "/courier-service/delivery-hours",
+        "method": "GET",
+        "queryParameters": {
+          "city": {
+            "matches": ".*"
+          }
+        }
+      },
+      "response": {
+        "status": 404,
+        "fixedDelayMilliseconds": 300,
+        "jsonBody": {
+          "error": "Unknown city"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    }
+  ]
+}
