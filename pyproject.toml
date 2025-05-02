@@ -1,0 +1,46 @@
+[tool.poetry]
+name = "delivery-hours-service"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+packages = [{include = "delivery_hours_service"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "*"
+httpx = "*"
+uvicorn = "*"
+
+[tool.poetry.group.dev-dependencies.dependencies]
+mypy = "*"
+pre-commit = "*"
+pytest = "*"
+pytest-github-actions-annotate-failures = "*"
+pytest-asyncio = "*"
+pytest-cov = "*"
+respx = "*"
+ruff = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # isort
+    "I",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

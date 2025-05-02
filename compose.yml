@@ -1,0 +1,26 @@
+services:
+    delivery-hours-service:
+      build:
+        context: .
+      command: uvicorn delivery_hours_service.main:app --host 0.0.0.0 --port 8000 --reload
+      ports:
+        - "127.0.0.1:8000:8000"
+      environment:
+        - VENUE_SERVICE_URL=http://external-services-mock:8080/venue-service
+        - COURIER_SERVICE_URL=http://external-services-mock:8080/courier-service
+      volumes:
+        - ./delivery_hours_service:/app/delivery_hours_service:z
+        - ./tests:/app/tests:z
+        - ./pyproject.toml:/app/pyproject.toml:z
+        - ./poetry.lock:/app/poetry.lock:z
+      depends_on:
+        external-services-mock:
+          condition: service_started
+
+    external-services-mock:
+      image: wiremock/wiremock:3.2.0
+      ports:
+        - "127.0.0.1:8080:8080"
+      volumes:
+        - ./external-services-mock/:/home/wiremock/mappings/:z
+
