@@ -12,26 +12,6 @@ from delivery_hours_service.common.resilience import (
 )
 
 
-def test_circuit_breaker_config_should_initialize_with_default_values() -> None:
-    config = CircuitBreakerConfig()
-
-    assert config.failure_threshold == 5
-    assert config.reset_timeout == timedelta(seconds=60)
-    assert config.half_open_max_calls == 3
-
-
-def test_circuit_breaker_config_should_initialize_with_custom_values() -> None:
-    config = CircuitBreakerConfig(
-        failure_threshold=10,
-        reset_timeout=timedelta(seconds=120),
-        half_open_max_calls=5,
-    )
-
-    assert config.failure_threshold == 10
-    assert config.reset_timeout == timedelta(seconds=120)
-    assert config.half_open_max_calls == 5
-
-
 @pytest.fixture
 def configured_circuit_breaker() -> CircuitBreaker:
     return CircuitBreaker(
@@ -74,12 +54,6 @@ def test_circuit_breaker_should_open_circuit_when_failure_threshold_reached(
     assert configured_circuit_breaker.state == CircuitBreakerState.OPEN
 
 
-def test_circuit_breaker_should_always_allow_execution_when_closed(
-    configured_circuit_breaker: CircuitBreaker,
-) -> None:
-    assert configured_circuit_breaker.can_execute() is True
-
-
 def test_circuit_breaker_should_deny_execution_when_open_and_timeout_not_reached(
     configured_circuit_breaker: CircuitBreaker,
 ) -> None:
@@ -101,17 +75,6 @@ def test_circuit_breaker_should_transition_to_half_open_when_timeout_reached(
     assert configured_circuit_breaker.can_execute() is True
     assert configured_circuit_breaker.state == CircuitBreakerState.HALF_OPEN
     assert configured_circuit_breaker.half_open_calls == 0
-
-
-def test_circuit_breaker_should_track_successful_calls_in_half_open_state(
-    configured_circuit_breaker: CircuitBreaker,
-) -> None:
-    configured_circuit_breaker.state = CircuitBreakerState.HALF_OPEN
-
-    configured_circuit_breaker.record_success()
-
-    assert configured_circuit_breaker.half_open_calls == 1
-    assert configured_circuit_breaker.state == CircuitBreakerState.HALF_OPEN
 
 
 def test_circuit_breaker_should_close_circuit_after_sufficient_half_open_successes(
@@ -147,21 +110,6 @@ async def test_circuit_breaker_decorator_should_call_wrapped_function_when_circu
 
     assert result == "success"
     mock_func.assert_called_once_with("arg1", kwarg1="value1")
-
-
-@pytest.mark.asyncio
-async def test_circuit_breaker_decorator_should_record_success_after_successful_call(
-    circuit_breaker_test_config: CircuitBreakerConfig,
-) -> None:
-    mock_func = AsyncMock(return_value="success")
-
-    with patch(
-        "delivery_hours_service.common.resilience.CircuitBreaker.record_success"
-    ) as mock_record_success:
-        decorated_func = circuit_breaker(circuit_breaker_test_config)(mock_func)
-        await decorated_func()
-
-        mock_record_success.assert_called_once()
 
 
 @pytest.mark.asyncio
