@@ -4,7 +4,6 @@ import pytest
 
 from delivery_hours_service.common.config import ServiceConfig
 from delivery_hours_service.common.resilience import CircuitBreakerError
-from delivery_hours_service.domain.models.delivery_window import WeeklyDeliveryWindow
 from delivery_hours_service.infrastructure.adapters.courier_service import (
     CourierServiceAdapter,
 )
@@ -49,15 +48,15 @@ async def test_get_delivery_hours_should_call_courier_service_with_correct_param
 
 
 @pytest.mark.asyncio
-async def test_get_delivery_hours_should_return_empty_window_when_city_not_found(
+async def test_get_delivery_hours_should_propagate_404_error(
     courier_service_adapter, mock_http_client
 ) -> None:
     mock_http_client.get.side_effect = ApiRequestError(404, "City not found")
 
-    result = await courier_service_adapter.get_delivery_hours("unknown-city")
+    with pytest.raises(ApiRequestError) as exc_info:
+        await courier_service_adapter.get_delivery_hours("unknown-city")
 
-    assert isinstance(result, WeeklyDeliveryWindow)
-    assert all(day_window.is_closed for day_window in result.schedule.values())
+    assert exc_info.value.status_code == 404
 
 
 @pytest.mark.asyncio

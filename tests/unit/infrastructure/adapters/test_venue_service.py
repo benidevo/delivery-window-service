@@ -4,7 +4,6 @@ import pytest
 
 from delivery_hours_service.common.config import ServiceConfig
 from delivery_hours_service.common.resilience import CircuitBreakerError
-from delivery_hours_service.domain.models.delivery_window import WeeklyDeliveryWindow
 from delivery_hours_service.infrastructure.adapters.venue_service import (
     VenueServiceAdapter,
 )
@@ -53,15 +52,15 @@ async def test_get_opening_hours_should_call_venue_service_with_correct_endpoint
 
 
 @pytest.mark.asyncio
-async def test_get_opening_hours_should_return_empty_window_when_venue_not_found(
+async def test_get_opening_hours_should_propagate_404_error(
     venue_service_adapter, mock_http_client
 ) -> None:
     mock_http_client.get.side_effect = ApiRequestError(404, "Venue not found")
 
-    result = await venue_service_adapter.get_opening_hours("invalid-id")
+    with pytest.raises(ApiRequestError) as exc_info:
+        await venue_service_adapter.get_opening_hours("invalid-id")
 
-    assert isinstance(result, WeeklyDeliveryWindow)
-    assert all(day_window.is_closed for day_window in result.schedule.values())
+    assert exc_info.value.status_code == 404
 
 
 @pytest.mark.asyncio

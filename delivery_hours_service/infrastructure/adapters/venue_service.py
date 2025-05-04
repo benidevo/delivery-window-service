@@ -49,11 +49,10 @@ class VenueServiceAdapter(VenueServicePort):
                     venue_id=venue_id,
                     status_code=e.status_code,
                 )
-                return WeeklyDeliveryWindow.empty()
-
-            logger.error(
-                f"Failed to fetch opening hours for venue {venue_id}: {str(e)}"
-            )
+            else:
+                logger.error(
+                    f"Failed to fetch opening hours for venue {venue_id}: {str(e)}"
+                )
             raise
         except Exception:
             logger.error(

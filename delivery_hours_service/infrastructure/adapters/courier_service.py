@@ -48,8 +48,10 @@ class CourierServiceAdapter(CourierServicePort):
                     city=city,
                     status_code=e.status_code,
                 )
-                return WeeklyDeliveryWindow.empty()
-            logger.error(f"Failed to fetch delivery hours for city {city}: {str(e)}")
+            else:
+                logger.error(
+                    f"Failed to fetch delivery hours for city {city}: {str(e)}"
+                )
             raise
         except Exception:
             logger.error(

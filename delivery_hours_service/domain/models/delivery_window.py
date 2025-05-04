@@ -157,5 +157,8 @@ class WeeklyDeliveryWindow:
 
         return result
 
+    def is_empty(self) -> bool:
+        return all(window.is_closed for window in self.schedule.values())
+
     def __repr__(self) -> str:
         return f"WeeklyDeliveryWindow({self.schedule})"
