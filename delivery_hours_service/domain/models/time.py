@@ -169,29 +169,34 @@ class TimeRange:
         return self.start_time <= time <= self.end_time
 
     def overlaps_with(self, other: "TimeRange") -> bool:
-        contains_other_start = self.contains_time(other.start_time)
-        contains_other_end = self.contains_time(other.end_time)
-        other_contains_start = other.contains_time(self.start_time)
-        other_contains_end = other.contains_time(self.end_time)
+        """
+        Check if this time range overlaps with another time range.
 
-        if (
-            contains_other_start
-            or contains_other_end
-            or other_contains_start
-            or other_contains_end
-        ):
-            return True
+        It handles special cases for overnight ranges (spans past midnight) as well as
+        regular time ranges. Two overnight ranges always overlap. For mixed cases, it
+        checks if either range contains any endpoints of the other.
+        """
 
-        # Special case: both are overnight ranges
-        if self.is_overnight and other.is_overnight:
-            return True
+        if self.is_overnight or other.is_overnight:
+            contains_other_start = self.contains_time(other.start_time)
+            contains_other_end = self.contains_time(other.end_time)
+            other_contains_start = other.contains_time(self.start_time)
+            other_contains_end = other.contains_time(self.end_time)
 
-        if not self.is_overnight and not other.is_overnight:
-            # Check if one range is fully contained within the other
-            if self.start_time <= other.start_time and self.end_time >= other.end_time:
+            if (
+                contains_other_start
+                or contains_other_end
+                or other_contains_start
+                or other_contains_end
+            ):
                 return True
-            if other.start_time <= self.start_time and other.end_time >= self.end_time:
+
+            if self.is_overnight and other.is_overnight:
                 return True
+        else:
+            return (
+                self.start_time <= other.end_time and other.start_time <= self.end_time
+            )
 
         return False
 
