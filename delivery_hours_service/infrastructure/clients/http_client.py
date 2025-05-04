@@ -44,7 +44,9 @@ class HttpClientPool:
         if base_url not in cls._clients:
             logger.info(f"Creating new HTTP client for {base_url}")
             cls._clients[base_url] = AsyncClient(
-                base_url=base_url, timeout=timeout, limits=DEFAULT_LIMITS, http2=True
+                base_url=base_url,
+                timeout=timeout,
+                limits=DEFAULT_LIMITS,
             )
         return cls._clients[base_url]
 
@@ -82,6 +84,17 @@ class HttpClient:
                 status_code=response.status_code,
             )
             return response
+        except httpx.HTTPStatusError as e:
+            status_code = e.response.status_code
+            logger.error(
+                "HTTP request failed",
+                operation="http_get",
+                endpoint=endpoint,
+                status_code=status_code,
+                detail=str(e),
+                exc_info=True,
+            )
+            raise ApiRequestError(status_code, str(e)) from e
         except httpx.HTTPError as e:
             logger.error(
                 "HTTP request failed",
@@ -90,7 +103,7 @@ class HttpClient:
                 detail=str(e),
                 exc_info=True,
             )
-            raise ApiRequestError(getattr(e, "status_code", 500), str(e)) from e
+            raise ApiRequestError(500, str(e)) from e
 
 
 @asynccontextmanager

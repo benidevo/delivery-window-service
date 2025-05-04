@@ -48,7 +48,6 @@ class GetVenueDeliveryHoursUseCase:
         if venue_hours is None:
             result.add_error(
                 code="MISSING_VENUE_HOURS",
-                message=f"Could not retrieve opening hours for venue {venue_id}",
                 source=ErrorSource.VENUE_SERVICE,
                 severity=ErrorSeverity.ERROR,
             )
@@ -57,7 +56,6 @@ class GetVenueDeliveryHoursUseCase:
         if courier_hours is None:
             result.add_error(
                 code="MISSING_COURIER_HOURS",
-                message=f"Could not retrieve delivery hours for city {city_slug}",
                 source=ErrorSource.COURIER_SERVICE,
                 severity=ErrorSeverity.ERROR,
             )
@@ -76,7 +74,6 @@ class GetVenueDeliveryHoursUseCase:
             )
             result.add_error(
                 code="INTERSECTION_ERROR",
-                message=f"Failed to calculate delivery hours: {str(e)}",
                 source=ErrorSource.DOMAIN_LOGIC,
                 severity=ErrorSeverity.ERROR,
                 details={"error_type": type(e).__name__},
@@ -135,7 +132,6 @@ class GetVenueDeliveryHoursUseCase:
 
             result.add_error(
                 code=error_code,
-                message=f"{service_type.capitalize()} service temporarily unavailable",
                 source=ErrorSource.VENUE_SERVICE
                 if service_type == "venue"
                 else ErrorSource.COURIER_SERVICE,
@@ -144,13 +140,12 @@ class GetVenueDeliveryHoursUseCase:
             )
             return None
         except ApiRequestError as e:
-            if hasattr(e, "status_code") and e.status_code == 404:
+            if e.status_code == 404:
                 # Not found is considered a normal case; so we return empty window
                 service_statuses[f"{service_type}_service"] = "not_found"
 
                 result.add_error(
                     code=f"{service_type.upper()}_NOT_FOUND",
-                    message=f"{service_type.capitalize()} {identifier} not found",
                     source=ErrorSource.VENUE_SERVICE
                     if service_type == "venue"
                     else ErrorSource.COURIER_SERVICE,
@@ -158,13 +153,10 @@ class GetVenueDeliveryHoursUseCase:
                 )
                 return WeeklyDeliveryWindow.empty()
 
-            service_statuses[f"{service_type}_service"] = (
-                f"api_error_{getattr(e, 'status_code', 'unknown')}"
-            )
+            service_statuses[f"{service_type}_service"] = f"api_error_{e.status_code}"
 
             result.add_error(
                 code=f"{service_type.upper()}_SERVICE_ERROR",
-                message=f"Error from {service_type} service: {str(e)}",
                 source=ErrorSource.VENUE_SERVICE
                 if service_type == "venue"
                 else ErrorSource.COURIER_SERVICE,
@@ -186,7 +178,6 @@ class GetVenueDeliveryHoursUseCase:
 
             result.add_error(
                 code=f"{service_type.upper()}_SERVICE_ERROR",
-                message=f"Unexpected error from {service_type} service",
                 source=ErrorSource.VENUE_SERVICE
                 if service_type == "venue"
                 else ErrorSource.COURIER_SERVICE,

@@ -1,17 +1,12 @@
-from fastapi import APIRouter, FastAPI
+from fastapi import FastAPI
 
 from delivery_hours_service.common.config import ServiceConfig, load_config
 from delivery_hours_service.infrastructure.clients.http_client import (
     lifespan_http_clients,
 )
-
-
-async def get_delivery_hours(city_slug: str, venue_id: str):
-    # TODO: please implement this endpoint
-    # The base urls for externals services are available in
-    # VENUE_SERVICE_URL and COURIER_SERVICE_URL variables
-
-    return {"TODO": f"Please implement me! Got {city_slug=} {venue_id=}"}
+from delivery_hours_service.interface.api.delivery_hours_api import (
+    router as delivery_router,
+)
 
 
 class Application:
@@ -26,9 +21,7 @@ class Application:
         self.register_routes()
 
     def register_routes(self) -> None:
-        router = APIRouter(tags=["delivery"])
-        router.get("/delivery-hours", response_model=dict)(get_delivery_hours)
-        self.app.include_router(router)
+        self.app.include_router(delivery_router)
 
     def get_app(self) -> FastAPI:
         return self.app

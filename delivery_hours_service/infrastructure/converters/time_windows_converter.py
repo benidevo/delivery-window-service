@@ -57,14 +57,16 @@ class TimeWindowsConverter:
         day_enums = list(DayOfWeek)
         day_name_map = TimeWindowsConverter.get_day_name_mapping()
         schedule = {day: DeliveryWindow.closed(day) for day in day_enums}
+        # Keep track of which next-day closes have been used for overnight ranges
+        used_next_day_closes: set[tuple[DayOfWeek, int]] = set()
 
         for day_name, time_windows in data.items():
             day_enum = day_mapping.get(day_name.lower())
             if day_enum is None:
-                logger.warning(f"Unknown day name: {day_name}")
+                logger.warning(f"Unknown day name in data: {day_name}")
                 continue
 
-            windows = TimeWindowsConverter.process_day_windows(time_windows)
+            windows = TimeWindowsConverter.process_day_windows(time_windows, day_name)
 
             if windows:
                 schedule[day_enum] = DeliveryWindow(day_enum, windows)
@@ -74,124 +76,121 @@ class TimeWindowsConverter:
             day_name = day_name_map[day_enum].lower()
             next_day_name = day_name_map[next_day_enum].lower()
 
-            if day_name not in data or next_day_name not in data:
+            current_day_events = data.get(day_name, [])
+            next_day_events = data.get(next_day_name, [])
+
+            if not current_day_events or not next_day_events:
                 continue
 
-            current_day_opens = []
-            next_day_closes = []
+            # Overnight pattern: last event today is 'open', first event tomorrow is 'close'. # noqa: E501
+            last_event_current = current_day_events[-1]
+            first_event_next = next_day_events[0]
 
-            for window in data.get(day_name, []):
-                if "open" in window:
-                    current_day_opens.append(window["open"])
+            if "open" in last_event_current and "close" in first_event_next:
+                close_key = (next_day_enum, first_event_next["close"])
+                if close_key in used_next_day_closes:
+                    continue
 
-            for window in data.get(next_day_name, []):
-                if "close" in window:
-                    next_day_closes.append(window["close"])
-
-            if not current_day_opens or not next_day_closes:
-                continue
-
-            current_day_opens.sort()
-            next_day_closes.sort()
-
-            regular_opens_count = 0
-            regular_closes_count = 0
-
-            for window in data.get(day_name, []):
-                if "open" in window:
-                    regular_opens_count += 1
-                elif "close" in window:
-                    regular_closes_count += 1
-
-            if current_day_opens and next_day_closes:
-                # Take the latest open time and the earliest close time
-                open_time = current_day_opens[-1]
+                open_seconds = last_event_current["open"]
+                close_seconds = first_event_next["close"]
 
                 try:
-                    # Create an overnight window
-                    start_time = Time.from_unix_seconds(open_time)
-                    end_time = Time.from_unix_seconds(0)  # Midnight
+                    start_time = Time.from_unix_seconds(open_seconds)
+                    end_time = Time.from_unix_seconds(close_seconds)
 
-                    # Create an overnight window
                     time_range = TimeRange(start_time, end_time)
-
-                    # Add to the current day's windows
                     existing_windows = schedule[day_enum].windows
+
+                    logger.info(
+                        "Creating and adding overnight range for "
+                        f"{day_enum.name}: {time_range}"
+                    )
                     new_windows = list(existing_windows) + [time_range]
                     schedule[day_enum] = DeliveryWindow(day_enum, new_windows)
 
+                    used_next_day_closes.add(close_key)
                 except Exception as e:
                     logger.warning(
-                        f"Invalid overnight time range: {open_time}-0: {str(e)}"
+                        "Error processing potential overnight range for "
+                        f"{day_enum.name}: Open {open_seconds}s, "
+                        f"Close {close_seconds}s. Error: {str(e)}",
+                        exc_info=True,
                     )
 
         return schedule
 
     @staticmethod
-    def process_day_windows(time_windows: list[dict[str, int]]) -> list[TimeRange]:
+    def process_day_windows(
+        time_windows: list[dict[str, int]],
+        day_name: str,
+    ) -> list[TimeRange]:
         """
-        Processes raw time windows for a single day into domain TimeRange objects.
+        Converts raw time window data into TimeRange objects for a specific day.
 
-        The method handles potentially inconsistent data by:
-        1. Separating open and close times into separate lists
-        2. Sorting both lists chronologically
-        3. Pairing each open time with the next available close time that comes after it
-        4. Skipping invalid pairs or times that can't be converted
-
-        Expected input format:
-        [{"open": 28800}, {"close": 72000}, {"open": 75600}, {"close": 86399}, ...]
-
-        Where values are UNIX seconds since midnight (0-86399):
-        - 28800 = 8:00 AM (28800 seconds after midnight)
-        - 72000 = 8:00 PM (72000 seconds after midnight)
+        This method:
+        - Handles multiple "open" and "close" pairs within the same day.
+        - Logs and skips invalid or overlapping time ranges.
+        - Identifies unpaired "open" entries for potential overnight handling.
         """
-        if len(time_windows) % 2 != 0:
-            logger.warning(f"Odd number of time entries: {time_windows}")
 
         time_ranges = []
-        opens = []
-        closes = []
+        processed_indices: set[int] = set()
 
-        for window in time_windows:
-            if "open" in window:
-                opens.append(window["open"])
-            elif "close" in window:
-                closes.append(window["close"])
-
-        if len(opens) != len(closes):
-            logger.warning(
-                f"Mismatch between opening and closing times: {len(opens)} "
-                f"openings and {len(closes)} closings"
-            )
-
-        # Create proper pairs that match each open with the next available close
-        # This handles cases where there are orphaned opens or closes
-        paired_windows = []
-
-        opens.sort()
-        closes.sort()
-
-        for open_time in opens:
-            # Find the next close time that is after this open time
-            for i, close_time in enumerate(closes):
-                if close_time > open_time:
-                    paired_windows.append((open_time, close_time))
-                    # Remove this close time so it doesn't get used again
-                    closes.pop(i)
-                    break
-
-        for open_time, close_time in paired_windows:
-            try:
-                start_time = Time.from_unix_seconds(open_time)
-                end_time = Time.from_unix_seconds(close_time)
-
-                time_range = TimeRange(start_time, end_time)
-                time_ranges.append(time_range)
-            except Exception as e:
-                logger.warning(
-                    f"Invalid time range: {open_time}-{close_time}: {str(e)}"
-                )
+        for open_event_index, window in enumerate(time_windows):
+            if open_event_index in processed_indices:
                 continue
+
+            if "open" in window:
+                open_seconds = window["open"]
+
+                found_close = False
+                for close_event_index in range(open_event_index + 1, len(time_windows)):
+                    if close_event_index in processed_indices:
+                        continue
+                    next_window = time_windows[close_event_index]
+                    if "close" in next_window:
+                        close_seconds = next_window["close"]
+
+                        if close_seconds < open_seconds:
+                            logger.debug(
+                                f"Skipping potential overnight pair for {day_name}: "
+                                f"Open {open_seconds}s, Close {close_seconds}s "
+                                "in process_day_windows"
+                            )
+                            continue
+
+                        try:
+                            start_time = Time.from_unix_seconds(open_seconds)
+                            end_time = Time.from_unix_seconds(close_seconds)
+
+                            time_range = TimeRange(start_time, end_time)
+                            time_ranges.append(time_range)
+                            logger.info(
+                                "Created within-day TimeRange for "
+                                f"{day_name}: {time_range}"
+                            )
+
+                            processed_indices.add(open_event_index)
+                            processed_indices.add(close_event_index)
+                            found_close = True
+                            break
+                        except Exception as e:
+                            logger.warning(
+                                f"Invalid time range detected for {day_name}: "
+                                f"Open {open_seconds}s, Close {close_seconds}s. "
+                                f"Error: {str(e)}",
+                                exc_info=True,
+                            )
+                            processed_indices.add(open_event_index)
+                            processed_indices.add(close_event_index)
+                            found_close = True
+                            break
+
+                if not found_close and open_event_index not in processed_indices:
+                    logger.info(
+                        f"Found unpaired 'open' for {day_name} at {open_seconds}s. "
+                        "Expecting it to be handled as overnight if applicable."
+                    )
 
         return time_ranges
 

@@ -43,5 +43,5 @@ async def test_error_handling_middleware_should_return_500_when_exception_raised
     response = await error_handling_middleware(mock_request, mock_call_next)
 
     assert response.status_code == 500
-    assert json.loads(response.body)["error"] == "Internal server error"
+    assert json.loads(response.body)["detail"] == "An unexpected error occurred"
     mock_call_next.assert_called_once_with(mock_request)
