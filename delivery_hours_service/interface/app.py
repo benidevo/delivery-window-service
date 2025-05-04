@@ -1,6 +1,9 @@
 from fastapi import APIRouter, FastAPI
 
 from delivery_hours_service.common.config import ServiceConfig, load_config
+from delivery_hours_service.infrastructure.clients.http_client import (
+    lifespan_http_clients,
+)
 
 
 async def get_delivery_hours(city_slug: str, venue_id: str):
@@ -18,6 +21,7 @@ class Application:
             title="Delivery Hours Service",
             description="Service for providing delivery hours of venues",
             version="1.0.0",
+            lifespan=lifespan_http_clients,
         )
         self.register_routes()
 
