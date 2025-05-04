@@ -17,6 +17,7 @@ class Application:
             description="Service for providing delivery hours of venues",
             version="1.0.0",
             lifespan=lifespan_http_clients,
+            redirect_slashes=False,
         )
         self.register_routes()
 

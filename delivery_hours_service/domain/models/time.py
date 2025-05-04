@@ -232,53 +232,49 @@ class TimeRange:
 
     def find_intersection(self, other: "TimeRange") -> "TimeRange | None":
         """
-        Find the intersection between this TimeRange and another TimeRange.
-
-        Handles special cases:
-        - If time ranges don't overlap, returns None
-        - If both time ranges are overnight, returns the smaller range
-        - If one time range is overnight, checks if the other is fully contained
-        - For regular time ranges, returns the overlapping portion
+        Finds a new TimeRange that represents the overlapping time period
+        between this TimeRange and the other TimeRange.
         """
-        if not self.is_overnight and not other.is_overnight:
-            start = max(self.start_time, other.start_time)
-            end = min(self.end_time, other.end_time)
-
-            if end <= start:
-                return None
-
-            try:
-                return TimeRange(start, end)
-            except InvalidDurationError:
-                return None
 
         if not self.overlaps_with(other):
             return None
 
-        if self.is_overnight and other.is_overnight:
-            return TimeRange(
-                self.start_time
-                if self.duration_minutes <= other.duration_minutes
-                else other.start_time,
-                self.end_time
-                if self.duration_minutes <= other.duration_minutes
-                else other.end_time,
-            )
+        if self.is_overnight != other.is_overnight:
+            overnight = self if self.is_overnight else other
+            regular = other if self.is_overnight else self
+            return self._find_intersection_overnight_with_regular(overnight, regular)
 
-        elif self.is_overnight:
-            if self.contains_time(other.start_time) and self.contains_time(
-                other.end_time
-            ):
-                return TimeRange(other.start_time, other.end_time)
+        start = max(self.start_time, other.start_time)
+        end = min(self.end_time, other.end_time)
 
+        if not self.is_overnight and end <= start:
             return None
 
-        elif other.is_overnight:
-            if other.contains_time(self.start_time) and other.contains_time(
-                self.end_time
-            ):
-                return TimeRange(self.start_time, self.end_time)
+        try:
+            return TimeRange(start, end)
+        except InvalidDurationError:
+            return None
 
+    def _find_intersection_overnight_with_regular(
+        self, overnight: "TimeRange", regular: "TimeRange"
+    ) -> "TimeRange | None":
+        """
+        Helper method to find intersection between overnight and regular time ranges.
+        """
+        if overnight.contains_time(regular.start_time) and overnight.contains_time(
+            regular.end_time
+        ):
+            return TimeRange(regular.start_time, regular.end_time)
+        elif overnight.contains_time(regular.start_time):
+            try:
+                return TimeRange(regular.start_time, overnight.end_time)
+            except InvalidDurationError:
+                return None
+        elif overnight.contains_time(regular.end_time):
+            try:
+                return TimeRange(overnight.start_time, regular.end_time)
+            except InvalidDurationError:
+                return None
         return None
 
     def format(self) -> str:
