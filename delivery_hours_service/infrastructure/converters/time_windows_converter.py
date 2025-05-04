@@ -121,76 +121,68 @@ class TimeWindowsConverter:
 
     @staticmethod
     def process_day_windows(
-        time_windows: list[dict[str, int]],
-        day_name: str,
+        time_windows: list[dict[str, int]], day_name: str
     ) -> list[TimeRange]:
         """
-        Converts raw time window data into TimeRange objects for a specific day.
+        Processes time windows for a specific day and converts them
+        to TimeRange objects.
 
-        This method:
-        - Handles multiple "open" and "close" pairs within the same day.
-        - Logs and skips invalid or overlapping time ranges.
-        - Identifies unpaired "open" entries for potential overnight handling.
+        It takes a list of dictionaries representing opening and closing times,
+        pairs them appropriately,
+        and creates TimeRange objects from valid pairs. It also handles cases
+        where closing times precede
+        opening times (potential overnight windows) by skipping them since
+        they will be handled in the `handle_all_days` method.
         """
 
-        time_ranges = []
-        processed_indices: set[int] = set()
+        opens = []
+        closes = []
 
-        for open_event_index, window in enumerate(time_windows):
-            if open_event_index in processed_indices:
+        for i, window in enumerate(time_windows):
+            if "open" in window:
+                opens.append((i, window["open"]))
+            elif "close" in window:
+                closes.append((i, window["close"]))
+
+        # Sort both by timestamp
+        opens.sort(key=lambda x: x[1])
+        closes.sort(key=lambda x: x[1])
+
+        time_ranges = []
+        processed_open_indices = set()
+        open_idx = 0
+        close_idx = 0
+
+        while open_idx < len(opens) and close_idx < len(closes):
+            open_index, open_time = opens[open_idx]
+            _, close_time = closes[close_idx]
+
+            if close_time < open_time:
+                close_idx += 1
+                logger.debug(
+                    f"Skipping potential overnight pair for {day_name}: "
+                    f"Open {open_time}s, Close {close_time}s"
+                )
                 continue
 
-            if "open" in window:
-                open_seconds = window["open"]
+            try:
+                start_time = Time.from_unix_seconds(open_time)
+                end_time = Time.from_unix_seconds(close_time)
+                time_range = TimeRange(start_time, end_time)
+                time_ranges.append(time_range)
+                logger.info(
+                    f"Created within-day TimeRange for {day_name}: {time_range}"
+                )
+                processed_open_indices.add(open_index)
+            except Exception as e:
+                logger.warning(
+                    f"Invalid time range detected for {day_name}: "
+                    f"Open {open_time}s, Close {close_time}s. Error: {str(e)}"
+                )
 
-                found_close = False
-                for close_event_index in range(open_event_index + 1, len(time_windows)):
-                    if close_event_index in processed_indices:
-                        continue
-                    next_window = time_windows[close_event_index]
-                    if "close" in next_window:
-                        close_seconds = next_window["close"]
-
-                        if close_seconds < open_seconds:
-                            logger.debug(
-                                f"Skipping potential overnight pair for {day_name}: "
-                                f"Open {open_seconds}s, Close {close_seconds}s "
-                                "in process_day_windows"
-                            )
-                            continue
-
-                        try:
-                            start_time = Time.from_unix_seconds(open_seconds)
-                            end_time = Time.from_unix_seconds(close_seconds)
-
-                            time_range = TimeRange(start_time, end_time)
-                            time_ranges.append(time_range)
-                            logger.info(
-                                "Created within-day TimeRange for "
-                                f"{day_name}: {time_range}"
-                            )
-
-                            processed_indices.add(open_event_index)
-                            processed_indices.add(close_event_index)
-                            found_close = True
-                            break
-                        except Exception as e:
-                            logger.warning(
-                                f"Invalid time range detected for {day_name}: "
-                                f"Open {open_seconds}s, Close {close_seconds}s. "
-                                f"Error: {str(e)}",
-                                exc_info=True,
-                            )
-                            processed_indices.add(open_event_index)
-                            processed_indices.add(close_event_index)
-                            found_close = True
-                            break
-
-                if not found_close and open_event_index not in processed_indices:
-                    logger.info(
-                        f"Found unpaired 'open' for {day_name} at {open_seconds}s. "
-                        "Expecting it to be handled as overnight if applicable."
-                    )
+            # Move to next pair
+            open_idx += 1
+            close_idx += 1
 
         return time_ranges
 
