@@ -35,8 +35,8 @@ class DeliveryHoursResponse(BaseModel):
         ..., description="Available delivery hours for each day of the week"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "delivery_hours": {
                     "Monday": "09-12, 13:30-22",
@@ -49,6 +49,7 @@ class DeliveryHoursResponse(BaseModel):
                 }
             }
         }
+    }
 
 
 class ErrorResponse(BaseModel):
@@ -60,11 +61,12 @@ class ErrorResponse(BaseModel):
 
     detail: str = Field(..., description="Human-readable error message")
 
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "examples": [
                 {"detail": "Service temporarily unavailable"},
                 {"detail": "The requested venue was not found"},
                 {"detail": "An error occurred while processing your request"},
             ]
         }
+    }

@@ -85,7 +85,7 @@ def _raise_appropriate_exception(result) -> None:
 
 
 @router.get(
-    "/",
+    "",
     response_model=DeliveryHoursResponse,
     responses={
         200: {

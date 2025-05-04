@@ -1,4 +1,3 @@
-import pytest
 from httpx import AsyncClient, Response
 from respx import MockRouter
 
@@ -9,8 +8,6 @@ SECONDS_IN_HOUR = 60 * 60
 config = load_config()
 
 
-# TODO: Get rid of pytest.mark.xfail after implementing GET /delivery-hours
-@pytest.mark.xfail
 async def test_simple_venue_delivery_hours(respx_mock: MockRouter) -> None:
     city_slug = "berlin"
     venue_id = "12345"
