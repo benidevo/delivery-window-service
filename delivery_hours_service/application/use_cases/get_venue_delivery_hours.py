@@ -1,5 +1,5 @@
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from delivery_hours_service.application.ports.courier_service import CourierServicePort
 from delivery_hours_service.application.ports.venue_service import VenueServicePort
@@ -32,6 +32,13 @@ class GetVenueDeliveryHoursUseCase:
 
     venue_service: VenueServicePort
     courier_service: CourierServicePort
+    _service_type_to_error_source: dict = field(
+        init=False,
+        default_factory=lambda: {
+            "venue": ErrorSource.VENUE_SERVICE,
+            "courier": ErrorSource.COURIER_SERVICE,
+        },
+    )
 
     async def execute(self, venue_id: str, city_slug: str) -> DeliveryHoursResult:
         result = DeliveryHoursResult(delivery_window=WeeklyDeliveryWindow.empty())
@@ -115,13 +122,17 @@ class GetVenueDeliveryHoursUseCase:
         result: DeliveryHoursResult,
         service_statuses: dict[str, str],
     ) -> WeeklyDeliveryWindow | None:
+        error_source = self._service_type_to_error_source[service_type]
+        service_status_key = f"{service_type}_service"
+
         try:
             service_result = await task
-            service_statuses[f"{service_type}_service"] = "success"
+            service_statuses[service_status_key] = "success"
             return service_result
+
         except CircuitBreakerError as e:
             error_code = f"{service_type.upper()}_SERVICE_UNAVAILABLE"
-            service_statuses[f"{service_type}_service"] = "circuit_open"
+            service_statuses[service_status_key] = "circuit_open"
 
             logger.error(
                 f"Circuit breaker open for {service_type} service",
@@ -132,41 +143,33 @@ class GetVenueDeliveryHoursUseCase:
 
             result.add_error(
                 code=error_code,
-                source=ErrorSource.VENUE_SERVICE
-                if service_type == "venue"
-                else ErrorSource.COURIER_SERVICE,
+                source=error_source,
                 severity=ErrorSeverity.ERROR,
                 details={"circuit_breaker": True},
             )
             return None
+
         except ApiRequestError as e:
             if e.status_code == 404:
-                # Not found is considered a normal case; so we return empty window
-                service_statuses[f"{service_type}_service"] = "not_found"
-
+                service_statuses[service_status_key] = "not_found"
                 result.add_error(
                     code=f"{service_type.upper()}_NOT_FOUND",
-                    source=ErrorSource.VENUE_SERVICE
-                    if service_type == "venue"
-                    else ErrorSource.COURIER_SERVICE,
+                    source=error_source,
                     severity=ErrorSeverity.WARNING,
                 )
                 return WeeklyDeliveryWindow.empty()
 
-            service_statuses[f"{service_type}_service"] = f"api_error_{e.status_code}"
-
+            service_statuses[service_status_key] = f"api_error_{e.status_code}"
             result.add_error(
                 code=f"{service_type.upper()}_SERVICE_ERROR",
-                source=ErrorSource.VENUE_SERVICE
-                if service_type == "venue"
-                else ErrorSource.COURIER_SERVICE,
+                source=error_source,
                 severity=ErrorSeverity.ERROR,
-                details={"status_code": getattr(e, "status_code", None)},
+                details={"status_code": e.status_code},
             )
             return None
-        except Exception as e:
-            service_statuses[f"{service_type}_service"] = "error"
 
+        except Exception as e:
+            service_statuses[service_status_key] = "error"
             logger.error(
                 f"Unexpected error getting {service_type} hours",
                 error=str(e),
@@ -175,12 +178,9 @@ class GetVenueDeliveryHoursUseCase:
                 identifier=identifier,
                 exc_info=True,
             )
-
             result.add_error(
                 code=f"{service_type.upper()}_SERVICE_ERROR",
-                source=ErrorSource.VENUE_SERVICE
-                if service_type == "venue"
-                else ErrorSource.COURIER_SERVICE,
+                source=error_source,
                 severity=ErrorSeverity.ERROR,
                 details={"error_type": type(e).__name__},
             )

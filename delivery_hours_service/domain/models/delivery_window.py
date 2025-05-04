@@ -4,7 +4,7 @@ from enum import IntEnum
 from delivery_hours_service.domain.exceptions.time_exceptions import (
     IncompatibleDaysError,
 )
-from delivery_hours_service.domain.models.time import TimeRange
+from delivery_hours_service.domain.models.time import Time, TimeRange
 
 
 class DayOfWeek(IntEnum):
@@ -148,14 +148,23 @@ class WeeklyDeliveryWindow:
 
         return WeeklyDeliveryWindow(intersection_days)
 
-    def to_api_format(self) -> dict[str, str]:
-        result = {}
+    def get_schedule_data(self) -> dict[DayOfWeek, list[tuple[Time, Time]]]:
+        """
+        Returns the schedule data in a structured format.
 
-        for day in DayOfWeek:
-            day_window = self.schedule[day]
-            result[day.to_display_string()] = day_window.format()
+        For each day, returns a list of tuples containing
+        (start_time, end_time) for each window.
+        """
+        schedule_data = {}
 
-        return result
+        for day, day_window in self.schedule.items():
+            time_windows = []
+            for window in day_window.windows:
+                time_windows.append((window.start_time, window.end_time))
+
+            schedule_data[day] = time_windows
+
+        return schedule_data
 
     def is_empty(self) -> bool:
         return all(window.is_closed for window in self.schedule.values())

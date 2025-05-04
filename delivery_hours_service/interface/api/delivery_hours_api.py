@@ -4,49 +4,58 @@ from delivery_hours_service.application.use_cases.get_venue_delivery_hours impor
     GetVenueDeliveryHoursUseCase,
 )
 from delivery_hours_service.domain.models.delivery_result import (
+    DeliveryHoursResult,
     ErrorSource,
 )
+from delivery_hours_service.domain.models.delivery_window import DayOfWeek
 from delivery_hours_service.interface.api.dependencies import (
     get_delivery_hours_use_case,
 )
 from delivery_hours_service.interface.schemas.response import (
     DeliveryHoursResponse,
     ErrorResponse,
-    Weekday,
 )
 
 router = APIRouter(prefix="/delivery-hours", tags=["delivery hours"])
 
 
-def _format_hours(result):
-    """Format delivery hours for API response."""
-    formatted_hours = {}
+def _format_hours(result: DeliveryHoursResult) -> dict[str, str]:
+    """
+    Formats the delivery hours from a DeliveryHoursResult
+    object into a dictionary where:
+    - Days with no delivery hours are marked as "Closed"
+    - Hours are displayed without leading zeros (e.g., 9 instead of 09)
+    - Minutes are only included if non-zero
+        (e.g., "10:30" but just "10" for whole hours)
+    - Multiple time windows on the same day are comma-separated
+    """
 
-    for day_enum in Weekday:
-        day_name = day_enum.name.capitalize()
+    formatted_hours = {}
+    schedule_data = result.delivery_window.get_schedule_data()
+
+    for day in DayOfWeek:
+        day_name = day.to_display_string()
         formatted_hours[day_name] = "Closed"
 
-    for day_data in result.to_day_schedules():
-        day_name = day_data["day"].capitalize()
+    for day, time_windows in schedule_data.items():
+        if not time_windows:
+            continue
 
-        time_ranges_formatted = []
-        for time_data in day_data["times"]:
-            start_parts = time_data["start"].split(":")
-            end_parts = time_data["end"].split(":")
+        day_name = day.to_display_string()
+        time_ranges = []
 
-            start_formatted = (
-                start_parts[0].lstrip("0") if start_parts[0] != "00" else "0"
-            )
-            if start_parts[1] != "00":
-                start_formatted += ":" + start_parts[1]
+        for start_time, end_time in time_windows:
+            start_str = str(start_time.hours)
+            if start_time.minutes > 0:
+                start_str += f":{start_time.minutes:02d}"
 
-            end_formatted = end_parts[0].lstrip("0") if end_parts[0] != "00" else "0"
-            if end_parts[1] != "00":
-                end_formatted += ":" + end_parts[1]
+            end_str = str(end_time.hours)
+            if end_time.minutes > 0:
+                end_str += f":{end_time.minutes:02d}"
 
-            time_ranges_formatted.append(f"{start_formatted}-{end_formatted}")
+            time_ranges.append(f"{start_str}-{end_str}")
 
-        formatted_hours[day_name] = ", ".join(time_ranges_formatted)
+        formatted_hours[day_name] = ", ".join(time_ranges)
 
     return formatted_hours
 

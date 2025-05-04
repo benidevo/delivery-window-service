@@ -78,30 +78,3 @@ def test_should_intersect_two_weekly_windows() -> None:
     for day in DayOfWeek:
         if day not in [DayOfWeek.MONDAY, DayOfWeek.TUESDAY]:
             assert intersection.get_day_window(day).is_closed
-
-
-def test_should_convert_to_api_format() -> None:
-    weekly_window = WeeklyDeliveryWindow(
-        schedule={
-            DayOfWeek.MONDAY: DeliveryWindow(
-                day=DayOfWeek.MONDAY,
-                windows=[
-                    TimeRange(Time(10, 0), Time(12, 0)),
-                    TimeRange(Time(14, 0), Time(16, 30)),
-                ],
-            ),
-            DayOfWeek.TUESDAY: DeliveryWindow(
-                day=DayOfWeek.TUESDAY, windows=[TimeRange(Time(9, 0), Time(17, 0))]
-            ),
-        }
-    )
-
-    api_format = weekly_window.to_api_format()
-
-    assert api_format["Monday"] == "10-12, 14-16:30"
-    assert api_format["Tuesday"] == "09-17"
-    assert api_format["Wednesday"] == "Closed"
-    assert api_format["Thursday"] == "Closed"
-    assert api_format["Friday"] == "Closed"
-    assert api_format["Saturday"] == "Closed"
-    assert api_format["Sunday"] == "Closed"
