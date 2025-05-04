@@ -20,7 +20,6 @@ class ErrorSeverity(Enum):
 @dataclass
 class ServiceError:
     code: str
-    message: str
     source: ErrorSource
     severity: ErrorSeverity
     details: dict[str, Any] | None = None
@@ -50,7 +49,6 @@ class DeliveryHoursResult:
     def error(
         cls,
         code: str,
-        message: str,
         source: ErrorSource = ErrorSource.UNKNOWN,
         severity: ErrorSeverity = ErrorSeverity.ERROR,
         details: dict[str, Any] | None = None,
@@ -60,7 +58,6 @@ class DeliveryHoursResult:
         window = delivery_window or WeeklyDeliveryWindow.empty()
         error = ServiceError(
             code=code,
-            message=message,
             source=source,
             severity=severity,
             details=details,
@@ -78,7 +75,6 @@ class DeliveryHoursResult:
     def add_error(
         self,
         code: str,
-        message: str,
         source: ErrorSource = ErrorSource.UNKNOWN,
         severity: ErrorSeverity = ErrorSeverity.ERROR,
         details: dict[str, Any] | None = None,
@@ -86,7 +82,6 @@ class DeliveryHoursResult:
         self.errors.append(
             ServiceError(
                 code=code,
-                message=message,
                 source=source,
                 severity=severity,
                 details=details,
@@ -95,3 +90,30 @@ class DeliveryHoursResult:
 
     def add_metadata(self, key: str, value: Any) -> None:
         self.metadata[key] = value
+
+    def to_day_schedules(self) -> list[dict]:
+        """Convert the delivery window to a list of day schedules for API response."""
+        day_schedules = []
+
+        for day, window in self.delivery_window.schedule.items():
+            if window.is_closed:
+                continue
+
+            times = []
+            for time_range in window.windows:
+                start_time = f"{time_range.start_time.hours:02d}:{time_range.start_time.minutes:02d}"  # noqa: E501
+                end_time = (
+                    f"{time_range.end_time.hours:02d}:{time_range.end_time.minutes:02d}"
+                )
+
+                times.append(
+                    {
+                        "start": start_time,
+                        "end": end_time,
+                    }
+                )
+
+            if times:
+                day_schedules.append({"day": day.name.lower(), "times": times})
+
+        return day_schedules

@@ -65,7 +65,9 @@ class Time:
             )
 
         minutes_since_midnight = unix_seconds // 60
-        return cls.from_minutes(minutes_since_midnight)
+        hours = minutes_since_midnight // 60
+        minutes = minutes_since_midnight % 60
+        return cls(hours=hours, minutes=minutes)
 
     @property
     def minutes_since_midnight(self) -> int:
@@ -127,9 +129,10 @@ class TimeRange:
     _duration_minutes: int = field(init=False)
 
     def __post_init__(self):
-        is_overnight = (
-            self.start_time > self.end_time or self.start_time == self.end_time
-        )
+        start_minutes = self.start_time.hours * 60 + self.start_time.minutes
+        end_minutes = self.end_time.hours * 60 + self.end_time.minutes
+        is_overnight = end_minutes < start_minutes
+
         object.__setattr__(self, "_is_overnight", is_overnight)
 
         duration = self._calculate_duration()
@@ -166,17 +169,29 @@ class TimeRange:
         return self.start_time <= time <= self.end_time
 
     def overlaps_with(self, other: "TimeRange") -> bool:
+        contains_other_start = self.contains_time(other.start_time)
+        contains_other_end = self.contains_time(other.end_time)
+        other_contains_start = other.contains_time(self.start_time)
+        other_contains_end = other.contains_time(self.end_time)
+
         if (
-            self.contains_time(other.start_time)
-            or self.contains_time(other.end_time)
-            or other.contains_time(self.start_time)
-            or other.contains_time(self.end_time)
+            contains_other_start
+            or contains_other_end
+            or other_contains_start
+            or other_contains_end
         ):
             return True
 
-        # Special case: both are overnight ranges and cover the full day
+        # Special case: both are overnight ranges
         if self.is_overnight and other.is_overnight:
             return True
+
+        if not self.is_overnight and not other.is_overnight:
+            # Check if one range is fully contained within the other
+            if self.start_time <= other.start_time and self.end_time >= other.end_time:
+                return True
+            if other.start_time <= self.start_time and other.end_time >= self.end_time:
+                return True
 
         return False
 
@@ -225,6 +240,18 @@ class TimeRange:
         - If one time range is overnight, checks if the other is fully contained
         - For regular time ranges, returns the overlapping portion
         """
+        if not self.is_overnight and not other.is_overnight:
+            start = max(self.start_time, other.start_time)
+            end = min(self.end_time, other.end_time)
+
+            if end <= start:
+                return None
+
+            try:
+                return TimeRange(start, end)
+            except InvalidDurationError:
+                return None
+
         if not self.overlaps_with(other):
             return None
 
@@ -239,27 +266,20 @@ class TimeRange:
             )
 
         elif self.is_overnight:
-            return (
-                TimeRange(other.start_time, other.end_time)
-                if self.contains_time(other.start_time)
-                and self.contains_time(other.end_time)
-                else None
-            )
-        elif other.is_overnight:
-            return (
-                TimeRange(self.start_time, self.end_time)
-                if other.contains_time(self.start_time)
-                and other.contains_time(self.end_time)
-                else None
-            )
+            if self.contains_time(other.start_time) and self.contains_time(
+                other.end_time
+            ):
+                return TimeRange(other.start_time, other.end_time)
 
-        start = max(self.start_time, other.start_time)
-        end = min(self.end_time, other.end_time)
-
-        try:
-            return TimeRange(start, end)
-        except InvalidDurationError:
             return None
+
+        elif other.is_overnight:
+            if other.contains_time(self.start_time) and other.contains_time(
+                self.end_time
+            ):
+                return TimeRange(self.start_time, self.end_time)
+
+        return None
 
     def format(self) -> str:
         """
@@ -273,9 +293,6 @@ class TimeRange:
         if not isinstance(other, TimeRange):
             return False
         return self.start_time == other.start_time and self.end_time == other.end_time
-
-    def __repr__(self) -> str:
-        return f"TimeRange({self.start_time} - {self.end_time})"
 
     def __str__(self) -> str:
         return self.format()

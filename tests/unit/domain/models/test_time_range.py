@@ -30,14 +30,6 @@ def test_should_detect_overnight_when_end_before_start() -> None:
     assert time_range.duration_minutes == 240  # 4 hours
 
 
-def test_should_treat_equal_times_as_overnight() -> None:
-    time = Time(hours=12, minutes=0)
-    time_range = TimeRange(start_time=time, end_time=time)
-
-    assert time_range.is_overnight
-    assert time_range.duration_minutes == 24 * 60  # full day
-
-
 def test_should_raise_when_duration_less_than_minimum() -> None:
     start_time = Time(hours=14, minutes=0)
     end_time = Time(hours=14, minutes=29)  # 29 min duration (less than 30)

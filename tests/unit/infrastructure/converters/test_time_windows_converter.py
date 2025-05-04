@@ -63,7 +63,7 @@ def test_process_day_windows_should_handle_mismatched_open_close_counts() -> Non
         # Missing close for the second open
     ]
 
-    result = TimeWindowsConverter.process_day_windows(time_windows)
+    result = TimeWindowsConverter.process_day_windows(time_windows, "monday")
 
     assert len(result) == 1
     assert result[0].start_time.hours == 10
@@ -77,7 +77,7 @@ def test_process_day_windows_should_handle_extra_close_entries() -> None:
         {"close": 50400},  # 14:00
     ]
 
-    result = TimeWindowsConverter.process_day_windows(time_windows)
+    result = TimeWindowsConverter.process_day_windows(time_windows, "monday")
 
     assert len(result) == 1
     assert result[0].start_time.hours == 10

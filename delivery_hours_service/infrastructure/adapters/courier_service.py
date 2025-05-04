@@ -36,6 +36,8 @@ class CourierServiceAdapter(CourierServicePort):
             response = await self.client.get("/delivery-hours", {"city": city})
             data = response.json()
 
+            logger.debug(f"Courier service raw response for {city}: {data}")
+
             return TimeWindowsConverter.convert_to_weekly_delivery_window(data)
         except CircuitBreakerError as e:
             logger.error(f"Circuit breaker is open for courier service: {str(e)}")
