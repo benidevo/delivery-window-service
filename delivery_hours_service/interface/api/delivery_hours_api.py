@@ -24,7 +24,6 @@ def _format_hours(result: DeliveryHoursResult) -> dict[str, str]:
     Formats the delivery hours from a DeliveryHoursResult
     object into a dictionary where:
     - Days with no delivery hours are marked as "Closed"
-    - Hours are displayed without leading zeros (e.g., 9 instead of 09)
     - Minutes are only included if non-zero
         (e.g., "10:30" but just "10" for whole hours)
     - Multiple time windows on the same day are comma-separated
@@ -45,15 +44,7 @@ def _format_hours(result: DeliveryHoursResult) -> dict[str, str]:
         time_ranges = []
 
         for start_time, end_time in time_windows:
-            start_str = str(start_time.hours)
-            if start_time.minutes > 0:
-                start_str += f":{start_time.minutes:02d}"
-
-            end_str = str(end_time.hours)
-            if end_time.minutes > 0:
-                end_str += f":{end_time.minutes:02d}"
-
-            time_ranges.append(f"{start_str}-{end_str}")
+            time_ranges.append(f"{start_time.format()}-{end_time.format()}")
 
         formatted_hours[day_name] = ", ".join(time_ranges)
 

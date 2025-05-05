@@ -106,7 +106,7 @@ async def test_should_handle_cross_day_delivery_windows(respx_mock: MockRouter) 
     assert response.json() == {
         "delivery_hours": {
             # Intersection: Monday 20:00-01:00
-            "Monday": "20-1",
+            "Monday": "20-01",
             "Tuesday": "Closed",
             "Wednesday": "Closed",
             "Thursday": "Closed",
