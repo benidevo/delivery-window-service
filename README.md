@@ -18,7 +18,7 @@ If some of technologies used in this project are new to you, please mention them
 ## Your task
 **Implement the _GET /delivery-hours_ endpoint and tests for it. See the specification in [SYSTEM_SPECIFICATION.md](./SYSTEM_SPECIFICATION.md)**
 
-There's already a placeholder for the endpoint in the provided code. Additionally, there's an example test case which should pass once you have implemented the endpoint.  
+There's already a placeholder for the endpoint in the provided code. Additionally, there's an example test case which should pass once you have implemented the endpoint.
 
 ### How to do it in practice
 1. Clone this repository
@@ -34,7 +34,7 @@ We expect you to:
 * Adjust the code inside _delivery_hours_service_ and _tests_ as you see fit.
 * Have a reasonable architecture for the Delivery Hours Service. Feel free to restructure and refactor the existing code as much as you want. Feel free to introduce new modules and packages.
 * Implement pytest tests for your solution.
-* Consider that this could be a real world project so the code quality should be on the level that you'd be happy to contribute in our real projects. 
+* Consider that this could be a real world project so the code quality should be on the level that you'd be happy to contribute in our real projects.
 * Use your judgement in case you discover an edge case which is not documented in the [SYSTEM_SPECIFICATION.md](./SYSTEM_SPECIFICATION.md). In such cases, please document your choices / assumptions here in the README or in the pull request.
 
 We **do not** expect you to:
@@ -45,7 +45,7 @@ We **do not** expect you to:
 * Introduce any persistence (database).
 * Deploy your solution.
 
-## Development (Docker only) 
+## Development (Docker only)
 Prerequisites:
 * Docker Compose V2 (aka `docker compose` without the `-` in between)
 * Make
@@ -82,7 +82,7 @@ make lint
 ```
 
 ### Python dependencies
-To add or remove dependencies, modify _pyproject.toml_ and generate a fresh lock file with: 
+To add or remove dependencies, modify _pyproject.toml_ and generate a fresh lock file with:
 ```
 make update-dependencies
 ```
@@ -164,4 +164,17 @@ There's a GitHub workflow (ci.yml) which runs pre-commit (`ruff`, `ruff format`,
 Make sure your implementation passes the CI before submitting your solution.
 
 ## Notes from the applicant
-Please write here if you want to explain the choices you made on the way :).
+
+I implemented the Delivery Hours Service using a hexagonal architecture pattern that establish a clear boundary between the domain core and external dependencies.
+My implementation handles complex scenarios like overnight delivery periods and minimum delivery duration requirements. I focused on building a resilient system that accurately calculates delivery hours by combining venue opening hours with courier service delivery windows.
+
+Key features I implemented include:
+
+- Circuit breaker pattern for resilient external service communication
+- Comprehensive error handling with appropriate status codes
+- Parallel processing of external service requests for improved performance
+- Extensive unit and integration test coverage
+
+I identified several areas for improvement in a production environment, particularly around API design and inter-service communication. The current use of 404 status codes in venue and courier service for "not found" scenarios leaks implementation details and creates ambiguity between client errors and valid business outcomes.
+
+For detailed explanation of my architectural decisions, trade-offs, and improvement proposals, please see the [detailed architecture document](./delivery_hours_service/architecture.md).
