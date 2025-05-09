@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "delivery-hours-service"
+name = "delivery-window-service"
 version = "0.1.0"
-description = ""
+description = "Service for calculating delivery windows based on venue opening hours and courier availability"
 authors = ["Your Name <you@example.com>"]
 packages = [{include = "delivery_hours_service"}]
 

@@ -22,6 +22,150 @@
             {
               "close": 72000
             }
+          ],
+          "tuesday": [
+            {
+              "open": 36000
+            },
+            {
+              "close": 72000
+            }
+          ],
+          "wednesday": [
+            {
+              "open": 36000
+            },
+            {
+              "close": 72000
+            }
+          ],
+          "thursday": [
+            {
+              "open": 36000
+            },
+            {
+              "close": 72000
+            }
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "priority": 1,
+      "request": {
+        "urlPathTemplate": "/venue-service/venues/{venueId}/opening-hours",
+        "method": "GET",
+        "pathParameters": {
+          "venueId": {
+            "equalTo": "456"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "fixedDelayMilliseconds": 300,
+        "jsonBody": {
+          "monday": [
+            {
+              "open": 32400
+            },
+            {
+              "close": 54000
+            },
+            {
+              "open": 64800
+            },
+            {
+              "close": 82800
+            }
+          ],
+          "tuesday": [
+            {
+              "open": 32400
+            },
+            {
+              "close": 54000
+            },
+            {
+              "open": 64800
+            },
+            {
+              "close": 82800
+            }
+          ],
+          "saturday": [
+            {
+              "open": 36000
+            },
+            {
+              "close": 79200
+            }
+          ],
+          "sunday": [
+            {
+              "open": 36000
+            },
+            {
+              "close": 72000
+            }
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "priority": 1,
+      "request": {
+        "urlPathTemplate": "/venue-service/venues/{venueId}/opening-hours",
+        "method": "GET",
+        "pathParameters": {
+          "venueId": {
+            "equalTo": "789"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "fixedDelayMilliseconds": 300,
+        "jsonBody": {
+          "wednesday": [
+            {
+              "open": 61200
+            }
+          ],
+          "thursday": [
+            {
+              "close": 7200
+            },
+            {
+              "open": 61200
+            }
+          ],
+          "friday": [
+            {
+              "close": 7200
+            },
+            {
+              "open": 61200
+            }
+          ],
+          "saturday": [
+            {
+              "close": 7200
+            },
+            {
+              "open": 61200
+            }
+          ],
+          "sunday": [
+            {
+              "close": 7200
+            }
           ]
         },
         "headers": {
@@ -36,7 +180,7 @@
         "method": "GET",
         "queryParameters": {
           "city": {
-            "equalTo": "helsinki"
+            "equalTo": "new-york"
           }
         }
       },
@@ -46,7 +190,84 @@
         "jsonBody": {
           "monday": [
             {
-              "open": 50400
+              "open": 28800
+            },
+            {
+              "close": 79200
+            }
+          ],
+          "tuesday": [
+            {
+              "open": 28800
+            },
+            {
+              "close": 79200
+            }
+          ],
+          "wednesday": [
+            {
+              "open": 28800
+            },
+            {
+              "close": 79200
+            }
+          ],
+          "thursday": [
+            {
+              "open": 28800
+            },
+            {
+              "close": 79200
+            }
+          ],
+          "friday": [
+            {
+              "open": 28800
+            },
+            {
+              "close": 82800
+            }
+          ],
+          "saturday": [
+            {
+              "open": 36000
+            },
+            {
+              "close": 82800
+            }
+          ],
+          "sunday": [
+            {
+              "open": 36000
+            },
+            {
+              "close": 79200
+            }
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "priority": 1,
+      "request": {
+        "urlPathTemplate": "/courier-service/delivery-hours",
+        "method": "GET",
+        "queryParameters": {
+          "city": {
+            "equalTo": "london"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "fixedDelayMilliseconds": 300,
+        "jsonBody": {
+          "monday": [
+            {
+              "open": 32400
             },
             {
               "close": 75600
@@ -54,10 +275,210 @@
           ],
           "tuesday": [
             {
-              "open": 36000
+              "open": 32400
+            },
+            {
+              "close": 75600
+            }
+          ],
+          "wednesday": [
+            {
+              "open": 32400
+            },
+            {
+              "close": 75600
+            }
+          ],
+          "thursday": [
+            {
+              "open": 32400
+            },
+            {
+              "close": 75600
+            }
+          ],
+          "friday": [
+            {
+              "open": 32400
             },
             {
               "close": 82800
+            }
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "priority": 1,
+      "request": {
+        "urlPathTemplate": "/courier-service/delivery-hours",
+        "method": "GET",
+        "queryParameters": {
+          "city": {
+            "equalTo": "tokyo"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "fixedDelayMilliseconds": 300,
+        "jsonBody": {
+          "monday": [
+            {
+              "open": 32400
+            },
+            {
+              "close": 54000
+            },
+            {
+              "open": 61200
+            },
+            {
+              "close": 82800
+            }
+          ],
+          "tuesday": [
+            {
+              "open": 32400
+            },
+            {
+              "close": 54000
+            },
+            {
+              "open": 61200
+            },
+            {
+              "close": 82800
+            }
+          ],
+          "wednesday": [
+            {
+              "open": 32400
+            },
+            {
+              "close": 54000
+            },
+            {
+              "open": 61200
+            },
+            {
+              "close": 82800
+            }
+          ],
+          "thursday": [
+            {
+              "open": 32400
+            },
+            {
+              "close": 54000
+            },
+            {
+              "open": 61200
+            },
+            {
+              "close": 82800
+            }
+          ],
+          "friday": [
+            {
+              "open": 32400
+            },
+            {
+              "close": 54000
+            },
+            {
+              "open": 61200
+            },
+            {
+              "close": 86400
+            }
+          ],
+          "saturday": [
+            {
+              "open": 32400
+            },
+            {
+              "close": 86400
+            }
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    {
+      "priority": 1,
+      "request": {
+        "urlPathTemplate": "/courier-service/delivery-hours",
+        "method": "GET",
+        "queryParameters": {
+          "city": {
+            "equalTo": "berlin"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "fixedDelayMilliseconds": 300,
+        "jsonBody": {
+          "monday": [
+            {
+              "open": 43200
+            },
+            {
+              "close": 79200
+            }
+          ],
+          "tuesday": [
+            {
+              "open": 43200
+            },
+            {
+              "close": 79200
+            }
+          ],
+          "wednesday": [
+            {
+              "open": 43200
+            },
+            {
+              "close": 79200
+            }
+          ],
+          "thursday": [
+            {
+              "open": 43200
+            },
+            {
+              "close": 79200
+            }
+          ],
+          "friday": [
+            {
+              "open": 39600
+            },
+            {
+              "close": 82800
+            }
+          ],
+          "saturday": [
+            {
+              "open": 39600
+            },
+            {
+              "close": 82800
+            }
+          ],
+          "sunday": [
+            {
+              "open": 43200
+            },
+            {
+              "close": 72000
             }
           ]
         },

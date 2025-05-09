@@ -13,8 +13,8 @@ class Application:
     def __init__(self, config: ServiceConfig | None = None) -> None:
         self.config = config or load_config()
         self.app = FastAPI(
-            title="Delivery Hours Service",
-            description="Service for providing delivery hours of venues",
+            title="Delivery Window Service",
+            description="Service for calculating delivery windows based on venue opening hours and courier availability",  # noqa: E501
             version="1.0.0",
             lifespan=lifespan_http_clients,
             redirect_slashes=False,
