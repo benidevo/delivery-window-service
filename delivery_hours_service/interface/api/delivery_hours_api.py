@@ -105,7 +105,8 @@ async def get_delivery_hours(
     venue_id: str = Query(
         ...,
         description="Unique identifier of the venue to get opening hours for. "
-        "Available mock venues: 123 (regular hours), 456 (split shifts), 789 (nightlife venue).",
+        "Available mock venues: 123 (regular hours), 456 (split shifts), "
+        "789 (nightlife venue).",
     ),
     use_case: GetVenueDeliveryHoursUseCase = Depends(  # noqa: B008
         get_delivery_hours_use_case
@@ -119,18 +120,18 @@ async def get_delivery_hours(
     and venue opening hours.
 
     ## Available mock data for testing:
-    
+
     **Mock Venues:**
     - 123: Regular venue with standard hours (Monday-Thursday)
-    - 456: Venue with split shifts (lunch/dinner service) and weekend hours 
+    - 456: Venue with split shifts (lunch/dinner service) and weekend hours
     - 789: Nightlife venue with late-night/overnight operations
-    
+
     **Mock Cities:**
     - new-york: Full week courier service with extended weekend hours
     - london: Weekday-only courier service (Monday-Friday)
     - tokyo: Split shift courier service with midday breaks
     - berlin: Full week service with varied hours and weekend availability
-    
+
     Example usage: `/delivery-hours?city_slug=berlin&venue_id=456`
     """
     result = await use_case.execute(venue_id=venue_id, city_slug=city_slug)
