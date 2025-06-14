@@ -9,6 +9,7 @@ from delivery_hours_service.common.resilience import (
     circuit_breaker,
 )
 from delivery_hours_service.domain.models.delivery_window import WeeklyDeliveryWindow
+from delivery_hours_service.infrastructure.cache import get_cache_service
 from delivery_hours_service.infrastructure.clients.http_client import (
     ApiRequestError,
     HttpClient,
@@ -30,12 +31,27 @@ class VenueServiceAdapter(VenueServicePort):
         Retrieves opening hours for a venue from the Venue Service and
         converts them to the domain representation.
         """
+        endpoint = f"/venues/{venue_id}/opening-hours"
+        cache_service = get_cache_service()
+
+        if cache_service:
+            cached_data = await cache_service.get(
+                "venue", endpoint, {"venue_id": venue_id}
+            )
+            if cached_data:
+                logger.info(f"Retrieved cached opening hours for venue {venue_id}")
+                return TimeWindowsConverter.convert_to_weekly_delivery_window(
+                    cached_data
+                )
+
         logger.info(f"Fetching opening hours for venue {venue_id}")
 
         try:
-            endpoint = f"/venues/{venue_id}/opening-hours"
             response = await self.client.get(endpoint)
             data = response.json()
+
+            if cache_service:
+                await cache_service.set("venue", endpoint, {"venue_id": venue_id}, data)
 
             return TimeWindowsConverter.convert_to_weekly_delivery_window(data)
         except CircuitBreakerError as e:

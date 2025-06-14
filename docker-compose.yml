@@ -8,6 +8,8 @@ services:
       environment:
         - VENUE_SERVICE_URL=http://external-services-mock:8080/venue-service
         - COURIER_SERVICE_URL=http://external-services-mock:8080/courier-service
+        - REDIS_URL=redis://redis:6379
+        - CACHE_TTL_SECONDS=300
       volumes:
         - ./delivery_hours_service:/app/delivery_hours_service:z
         - ./tests:/app/tests:z
@@ -16,6 +18,10 @@ services:
       depends_on:
         external-services-mock:
           condition: service_started
+        redis:
+          condition: service_started
+      networks:
+        - app-network
 
     external-services-mock:
       image: wiremock/wiremock:3.2.0
@@ -23,4 +29,20 @@ services:
         - "127.0.0.1:8080:8080"
       volumes:
         - ./external-services-mock/:/home/wiremock/mappings/:z
+      networks:
+        - app-network
 
+    redis:
+      image: redis:7.2-alpine
+      command: redis-server --appendonly yes
+      volumes:
+        - redis_data:/data
+      networks:
+        - app-network
+
+volumes:
+  redis_data:
+
+networks:
+  app-network:
+    driver: bridge

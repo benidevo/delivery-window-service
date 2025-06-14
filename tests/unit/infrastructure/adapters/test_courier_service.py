@@ -15,6 +15,8 @@ def service_config() -> ServiceConfig:
     return ServiceConfig(
         venue_service_url="http://test-venue-service",
         courier_service_url="http://test-courier-service",
+        redis_url="redis://localhost:6379",
+        cache_ttl_seconds=300,
     )
 
 

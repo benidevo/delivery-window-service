@@ -15,7 +15,10 @@ def test_should_initialize_with_default_config_when_none_provided() -> None:
 
 def test_should_use_custom_config_when_provided() -> None:
     custom_config = ServiceConfig(
-        venue_service_url="http://test-venue", courier_service_url="http://test-courier"
+        venue_service_url="http://test-venue",
+        courier_service_url="http://test-courier",
+        redis_url="redis://localhost:6379",
+        cache_ttl_seconds=300,
     )
     app = Application(config=custom_config)
 

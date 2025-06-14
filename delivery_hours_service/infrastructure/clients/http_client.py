@@ -66,6 +66,18 @@ class HttpClient:
     async def get(self, endpoint: str, params: dict | None = None) -> Response:
         client = HttpClientPool.get_or_create_client(self.base_url, self.timeout)
 
+        # Add correlation ID to request headers
+        headers = {}
+        try:
+            from delivery_hours_service.common.middleware import correlation_id_context
+
+            correlation_id = correlation_id_context.get("")
+            if correlation_id:
+                headers["X-Request-ID"] = correlation_id
+        except Exception:
+            # Don't fail the request if correlation ID is not available
+            pass
+
         logger.debug(
             "Making HTTP request",
             operation="http_get",
@@ -74,7 +86,7 @@ class HttpClient:
         )
 
         try:
-            response = await client.get(endpoint, params=params)
+            response = await client.get(endpoint, params=params, headers=headers)
             response.raise_for_status()
 
             logger.info(

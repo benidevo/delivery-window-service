@@ -9,6 +9,7 @@ from delivery_hours_service.common.resilience import (
     circuit_breaker,
 )
 from delivery_hours_service.domain.models.delivery_window import WeeklyDeliveryWindow
+from delivery_hours_service.infrastructure.cache import get_cache_service
 from delivery_hours_service.infrastructure.clients.http_client import (
     ApiRequestError,
     HttpClient,
@@ -30,13 +31,28 @@ class CourierServiceAdapter(CourierServicePort):
         Retrieves delivery hours for a city from the Courier Service and
         converts them to the domain representation.
         """
+        endpoint = "/delivery-hours"
+        params = {"city": city}
+        cache_service = get_cache_service()
+
+        if cache_service:
+            cached_data = await cache_service.get("courier", endpoint, params)
+            if cached_data:
+                logger.info(f"Retrieved cached delivery hours for city {city}")
+                return TimeWindowsConverter.convert_to_weekly_delivery_window(
+                    cached_data
+                )
+
         logger.info(f"Fetching delivery hours for city {city}")
 
         try:
-            response = await self.client.get("/delivery-hours", {"city": city})
+            response = await self.client.get(endpoint, params)
             data = response.json()
 
             logger.debug(f"Courier service raw response for {city}: {data}")
+
+            if cache_service:
+                await cache_service.set("courier", endpoint, params, data)
 
             return TimeWindowsConverter.convert_to_weekly_delivery_window(data)
         except CircuitBreakerError as e:

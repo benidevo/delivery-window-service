@@ -28,6 +28,8 @@ class StructuredLogger:
         self.logger.setLevel(logging.INFO)
 
     def _log(self, level: LogLevel, message: str, **context: Any) -> None:
+        from delivery_hours_service.common.middleware import correlation_id_context
+
         log_entry = {
             "timestamp": datetime.now(UTC).isoformat(),
             "service": "delivery_hours_service",
@@ -35,6 +37,12 @@ class StructuredLogger:
             "level": level.name.lower(),
             **context,
         }
+
+        # Add correlation ID if available
+        correlation_id = correlation_id_context.get("")
+        if correlation_id:
+            log_entry["correlation_id"] = correlation_id
+
         self.logger.log(level.value, json.dumps(log_entry))
 
     def info(self, message: str, **context: Any) -> None:
