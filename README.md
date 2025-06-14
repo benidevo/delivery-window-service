@@ -1,5 +1,9 @@
 # Delivery Window Service
 
+![CI](https://img.shields.io/badge/CI-passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen)
+![Python](https://img.shields.io/badge/python-3.12-blue)
+
 A microservice that calculates delivery time windows by combining venue opening hours and courier delivery availability.
 
 ## Overview

@@ -2,7 +2,7 @@
 name = "delivery-window-service"
 version = "0.1.0"
 description = "Service for calculating delivery windows based on venue opening hours and courier availability"
-authors = ["Your Name <you@example.com>"]
+authors = ["Benjamin Idewor <benjaminidewor@gmail.com>"]
 packages = [{include = "delivery_hours_service"}]
 
 [tool.poetry.dependencies]
@@ -44,3 +44,4 @@ select = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+addopts = "--cov=delivery_hours_service --cov-report=term-missing --cov-report=html"

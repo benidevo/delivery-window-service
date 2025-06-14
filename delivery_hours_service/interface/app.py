@@ -7,6 +7,9 @@ from delivery_hours_service.infrastructure.clients.http_client import (
 from delivery_hours_service.interface.api.delivery_hours_api import (
     router as delivery_router,
 )
+from delivery_hours_service.interface.api.health import (
+    router as health_router,
+)
 
 
 class Application:
@@ -23,6 +26,7 @@ class Application:
 
     def register_routes(self) -> None:
         self.app.include_router(delivery_router)
+        self.app.include_router(health_router)
 
     def get_app(self) -> FastAPI:
         return self.app
