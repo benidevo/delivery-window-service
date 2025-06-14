@@ -1,21 +1,21 @@
 name: CI
-
-on: [push]
-
+on: [push, pull_request]
 jobs:
-  pre-commit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-      - run: pip install poetry==1.5.1
-      - run: poetry install
-      - run: poetry run pre-commit run --all-files
-
   test:
     runs-on: ubuntu-latest
     steps:
-        - uses: actions/checkout@v4
-        - run: docker compose run --no-deps delivery-hours-service pytest --cov . --cov-report term-missing
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry install
+      - name: Run tests
+        run: poetry run pytest
+      - name: Run linter
+        run: poetry run ruff check .
+      - name: Run type checker
+        run: poetry run mypy .
