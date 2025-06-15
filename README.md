@@ -27,6 +27,8 @@ This service is implemented using hexagonal architecture with four main layers:
 - **Infrastructure Layer**: External system interactions through adapters
 - **Interface Layer**: REST API endpoints and response formatting
 
+![Architecture Diagram](architecture.jpg)
+
 When a request is received, the service makes concurrent API calls to Venue and Courier services, calculates the intersection of their hours, and returns the formatted delivery windows.
 
 ## Technical Decisions
